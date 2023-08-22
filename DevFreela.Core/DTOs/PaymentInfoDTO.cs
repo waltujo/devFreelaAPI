@@ -12,11 +12,11 @@
             Amount = amount;
         }
 
-        public int IdProject { get; set; }
-        public string CreditCardNumber { get; set; }
-        public string Cvv { get; set; }
-        public string ExpiresAt { get; set; }
-        public string FullName { get; set; }
-        public decimal Amount { get; set; }
+        public int IdProject { get; private set; }
+        public string CreditCardNumber { get; private set; }
+        public string Cvv { get; private set; }
+        public string ExpiresAt { get; private set; }
+        public string FullName { get; private set; }
+        public decimal Amount { get; private set; }
     }
 }
