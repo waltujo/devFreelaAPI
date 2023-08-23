@@ -1,6 +1,31 @@
-﻿namespace DevFreela.Payments.API.Controllers
+﻿using DevFreela.Payments.API.Models;
+using DevFreela.Payments.API.Service;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
+namespace DevFreela.Payments.API.Controllers
 {
-    public class PaymentsController
+    [Route("api/payments")]
+    public class PaymentsController : ControllerBase
     {
+        private readonly IPaymentService _paymentService;
+        public PaymentsController(IPaymentService paymentService)
+        {
+            _paymentService = paymentService;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] PaymentInfoInputModel paymentInfoInputModel)
+        {
+            var result = await _paymentService.Process(paymentInfoInputModel);
+
+            if (!result)
+            {
+                return BadRequest();
+            }
+
+            return NoContent();
+        }
+
     }
 }

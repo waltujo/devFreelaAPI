@@ -1,10 +1,6 @@
 ﻿using DevFreela.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Reflection.Emit;
-using System.Text;
 
 namespace DevFreela.Infrastructure.Persistence.Configurations
 {
@@ -13,7 +9,7 @@ namespace DevFreela.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<UserSkill> builder)
         {
             builder
-               .HasKey(us => us.Id);
+                .HasKey(userSkill => userSkill.Id);
         }
     }
 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DevFreela.Application.ViewModels
+﻿namespace DevFreela.Application.ViewModels
 {
     public class LoginUserViewModel
     {
@@ -12,7 +8,7 @@ namespace DevFreela.Application.ViewModels
             Token = token;
         }
 
-        public string Email { get; private set;}
+        public string Email { get; private set; }
         public string Token { get; private set; }
     }
 }

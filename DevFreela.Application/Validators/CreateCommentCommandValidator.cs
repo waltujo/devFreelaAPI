@@ -9,7 +9,7 @@ namespace DevFreela.Application.Validators
         {
             RuleFor(p => p.Content)
                 .MaximumLength(255)
-                .WithMessage("Tamanho máximo do comentário é de 255 caracteres.");
+                .WithMessage("Tamanho máximo de Texto de Comentário é de 255 caracteres.");
         }
     }
 }

@@ -5,15 +5,10 @@ namespace DevFreela.Application.Validators
 {
     public class CreateProjectCommandValidator : AbstractValidator<CreateProjectCommand>
     {
-        public CreateProjectCommandValidator() 
+        public CreateProjectCommandValidator()
         {
-            RuleFor(p => p.Description)
-                .MaximumLength(255)
-                .WithMessage("Tamanho máximo da Descrição é de 255 caracteres.");
-
-            RuleFor(p => p.Title)
-                .MaximumLength(50)
-                .WithMessage("Tamanho máximo do Título é de 50 caracteres.");
+            RuleFor(p => p.Description).MaximumLength(255).WithMessage("Tamanho máixmo de Descrição é de 255 caracteres");
+            RuleFor(p => p.Title).MaximumLength(30).WithMessage("Tamanho máximo de Título é de 30 caracteres");
         }
     }
 }

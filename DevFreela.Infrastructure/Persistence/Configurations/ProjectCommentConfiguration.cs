@@ -9,17 +9,20 @@ namespace DevFreela.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<ProjectComment> builder)
         {
             builder
-            .HasKey(pm => pm.Id);
+                .HasKey(projectComment => projectComment.Id);
+
 
             builder
-                .HasOne(pm => pm.User)
-                .WithMany(pm => pm.Comments)
-                .HasForeignKey(pm => pm.IdUser);
+                .HasOne(pc => pc.Project)
+                .WithMany(p => p.Comments)
+                .HasForeignKey(pc => pc.IdProject)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder
-                .HasOne(pm => pm.Project)
-                .WithMany(pm => pm.Comments)
-                .HasForeignKey(pm => pm.IdProject);
+                .HasOne(p => p.User)
+                .WithMany(u => u.Comments)
+                .HasForeignKey(p => p.IdUser)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -1,11 +1,6 @@
-using DevFreela.API.Extesions;
-using DevFreela.API.Filters;
-using DevFreela.Application.Commands.CreateProject;
-using DevFreela.Application.Consumers;
-using DevFreela.Application.Validators;
+using DevFreela.API.Extensions;
+using DevFreela.API.Models;
 using DevFreela.Infrastructure.Persistence;
-using FluentValidation.AspNetCore;
-using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -15,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Linq;
 using System.Text;
 
 namespace DevFreela.API
@@ -29,25 +25,40 @@ namespace DevFreela.API
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        [System.Obsolete]
         public void ConfigureServices(IServiceCollection services)
         {
-            var ConnectionString = Configuration.GetConnectionString("DevFreela");
+            services.Configure<OpenignTimeOption>(Configuration.GetSection("OpeningTime"));
 
-            services.AddDbContext<DevFreelaDbContext>(options => options.UseSqlServer(ConnectionString));
+            var connectionsString = Configuration.GetConnectionString("DevFreelaCS");
+            services.AddDbContext<DevFreelaDbContext>(
+                options => options.UseSqlServer(connectionsString));
 
-            services.AddHostedService<PaymentApprovedConsumer>();
+            //services.AddDbContext<DevFreelaDbContext>(
+            //    options => options.UseInMemoryDatabase("DevFreela"));
 
-            services.AddHttpClient();
 
+            services.AddApplication();
             services.AddInfrastructure();
+            services.AddValidators();
 
-            services.AddControllers(options => options.Filters.Add(typeof(ValidationFilters)))
-                        .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<CreateUserCommandValidator>());
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
 
-            services.AddMediatR(typeof(CreateProjectCommand));
+                        ValidIssuer = Configuration["Jwt:Issuer"],
+                        ValidAudience = Configuration["Jwt:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                    };
+                });
 
-            services.AddSwaggerGen(c => 
+
+            services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "DevFreela.API", Version = "v1" });
 
@@ -58,7 +69,8 @@ namespace DevFreela.API
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Jwt Authorization header usando o esquema Bearer."
+                    Description = "JWT Authorization header usando o esquema Bearer."
+
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -71,29 +83,13 @@ namespace DevFreela.API
                                 Type = ReferenceType.SecurityScheme,
                                 Id = "Bearer"
                             }
-                        },
-                        new string[] {}
+                        } ,
+                        new string [] {}
                     }
                 });
+
+                c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
             });
-
-            services
-                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options => 
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-
-                        ValidIssuer = Configuration["Jwt:Issuer"],
-                        ValidAudience = Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey
-                        (Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
-                    };
-                });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -106,13 +102,16 @@ namespace DevFreela.API
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "DevFreela.API v1"));
             }
 
+            app.UseDeveloperExceptionPage();
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
             app.UseAuthentication();
+
             app.UseAuthorization();
-           
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

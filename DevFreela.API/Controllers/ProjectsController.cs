@@ -1,14 +1,16 @@
-﻿using DevFreela.Application.Commands.CreateComment;
+﻿using DevFreela.API.Models;
+using DevFreela.Application.Commands.CreateComment;
 using DevFreela.Application.Commands.CreateProject;
 using DevFreela.Application.Commands.DeleteProject;
-using DevFreela.Application.Commands.FinishProject;
-using DevFreela.Application.Commands.StartProject;
-using DevFreela.Application.Commands.UpdateProject;
+using DevFreela.Application.InputModels;
 using DevFreela.Application.Queries.GetAllProjects;
 using DevFreela.Application.Queries.GetProjectById;
+using DevFreela.Application.Services.Interfaces;
+using DevFreela.Core.DTO;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 
 namespace DevFreela.API.Controllers
@@ -17,32 +19,35 @@ namespace DevFreela.API.Controllers
     [Authorize]
     public class ProjectsController : ControllerBase
     {
+        private readonly OpenignTimeOption _openignTimeOption;
+        private readonly IProjectService _projectService;
         private readonly IMediator _mediator;
 
-        public ProjectsController(IMediator mediator)
+        public ProjectsController(IOptions<OpenignTimeOption> options, IProjectService projectService, IMediator mediator)
         {
             _mediator = mediator;
+            _projectService = projectService;
+            _openignTimeOption = options.Value;
         }
 
-        // api/projects?query=net core
         [HttpGet]
-        [Authorize(Roles = "freelancer, client")]
+        [Authorize(Roles = "client, freelancer")]
         public async Task<IActionResult> Get(string query)
         {
-            var getAll = new GetAllProjectsQuery(query);
-            var projects = await _mediator.Send(getAll);
+            var getAllProjectsQuery = new GetAllProjectsQuery(query);
+
+            var projects = await _mediator.Send(getAllProjectsQuery);
 
             return Ok(projects);
         }
 
-        // api/projects/2
         [HttpGet("{id}")]
-        [Authorize(Roles = "freelancer, client")]
-        public async Task<IActionResult> GetById(int id)
+        [Authorize(Roles = "client, freelancer")]
+        public async Task<IActionResult> GetByIdAsync(int id)
         {
-            //var project = _projectService.GetById(id);
-            var query = new GetProjectByIdQuery(id);
-            var project = await _mediator.Send(query);
+            var getProjectById = new GetProjectByIdQuery(id);
+
+            var project = await _mediator.Send(getProjectById);
 
             if (project == null)
             {
@@ -52,84 +57,70 @@ namespace DevFreela.API.Controllers
             return Ok(project);
         }
 
+
+
         [HttpPost]
         [Authorize(Roles = "client")]
         public async Task<IActionResult> Post([FromBody] CreateProjectCommand command)
         {
-            if (command.Title.Length > 50)
-            {
-                return BadRequest();
-            }
-
-            //var id = _projectService.Create(inputModel);
             var id = await _mediator.Send(command);
 
-            return CreatedAtAction(nameof(GetById), new { id = id }, command);
+            return CreatedAtAction(nameof(GetByIdAsync), new { id = id }, command);
         }
 
-        // api/projects/2
         [HttpPut("{id}")]
         [Authorize(Roles = "client")]
-        public async Task<IActionResult> Put(int id, [FromBody] UpdateProjectCommand command)
+        public IActionResult Put(int id, [FromBody] UpdateProjectInputModel inputModel)
         {
-            if (command.Description.Length > 200)
-            {
-                return BadRequest();
-            }
 
-            await _mediator.Send(command);
-            //_projectService.Update(inputModel);
+            _projectService.Update(inputModel);
 
             return NoContent();
         }
 
-        // api/projects/3 DELETE
         [HttpDelete("{id}")]
         [Authorize(Roles = "client")]
         public async Task<IActionResult> Delete(int id)
         {
             var command = new DeleteProjectCommand(id);
+
             await _mediator.Send(command);
-            //_projectService.Delete(id);
 
             return NoContent();
         }
 
-        // api/projects/1/comments POST
         [HttpPost("{id}/comments")]
-        [Authorize(Roles = "freelancer, client")]
+        [Authorize(Roles = "client, freelancer")]
         public async Task<IActionResult> PostComment(int id, [FromBody] CreateCommentCommand command)
         {
-           await _mediator.Send(command);
-
-            return NoContent();
-        }
-
-        // api/projects/1/start
-        [HttpPut("{id}/start")]
-        [Authorize(Roles = "client")]
-        public async Task<IActionResult> Start(int id)
-        {
-            //_projectService.Start(id);
-            var command = new StartProjectCommand(id);
             await _mediator.Send(command);
 
             return NoContent();
         }
 
-        // api/projects/1/finish
-        [HttpPut("{id}/finish")]
+        [HttpPut("{id}/start")]
         [Authorize(Roles = "client")]
-        public async Task<IActionResult> Finish(int id, [FromBody] FinishProjectCommand command)
+        public IActionResult Start(int id)
         {
-            command.Id = id;
+            _projectService.Start(id);
 
-            var result = await _mediator.Send(command);
+            return NoContent();
+        }
 
-            if (!result)
-            {
-                return BadRequest("O pagamento não pôde ser processado.");
-            }
+        [HttpPut("finish")]
+        [Authorize(Roles = "client")]
+        public IActionResult Finish([FromBody] PaymentInfoDTO paymentInfoDTOid)
+        {
+            _projectService.Finish(paymentInfoDTOid);
+
+            return NoContent();
+        }
+
+        [HttpPut("finishMessageBus")]
+        [Authorize(Roles = "client")]
+        public IActionResult FinishMessageBus([FromBody] PaymentInfoDTO paymentInfoDTOid)
+        {
+            _projectService.FinishMessageBus(paymentInfoDTOid);
 
             return Accepted();
         }

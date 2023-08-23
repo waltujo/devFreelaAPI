@@ -71,3 +71,9 @@ Além disto é bom ter um editor para trabalhar com o código como [VSCode](http
 - **[xUnit](https://xunit.net/)**
 - **[AzurePipelines](https://azure.microsoft.com/pt-br/services/devops/pipelines/)**
 - **[RabbitMQ](https://www.rabbitmq.com/)**
+
+
+
+
+
+

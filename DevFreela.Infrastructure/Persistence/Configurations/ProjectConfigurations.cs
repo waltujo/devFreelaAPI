@@ -9,17 +9,22 @@ namespace DevFreela.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<Project> builder)
         {
             builder
-            .HasKey(p => p.Id);
+             .ToTable("Projects")
+            .HasKey(project => project.Id);
 
-           builder
+            builder
+             .Property(p => p.TotalCost)
+             .HasColumnType("decimal(18,4)");
+
+            builder
                 .HasOne(p => p.Freelancer)
                 .WithMany(f => f.FreelanceProjects)
                 .HasForeignKey(p => p.IdFreelancer)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder
-                .HasOne(p => p.Client)
-                .WithMany(f => f.OwnedProjects)
+                 .HasOne(p => p.Client)
+                .WithMany(c => c.OwnedProjects)
                 .HasForeignKey(p => p.IdClient)
                 .OnDelete(DeleteBehavior.Restrict);
         }

@@ -1,10 +1,10 @@
-﻿using DevFreela.Application.Commands.CreateUser;
-using DevFreela.Application.Commands.LoginUser;
+﻿using DevFreela.Application.Commands.LoginUser;
+using DevFreela.Application.InputModels;
 using DevFreela.Application.Queries.GetUser;
+using DevFreela.Application.Services.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace DevFreela.API.Controllers
@@ -13,10 +13,11 @@ namespace DevFreela.API.Controllers
     [Authorize]
     public class UsersController : ControllerBase
     {
+        private readonly IUserService _userService;
         private readonly IMediator _mediator;
-
-        public UsersController(IMediator mediator)
+        public UsersController(IUserService userService, IMediator mediator)
         {
+            _userService = userService;
             _mediator = mediator;
         }
 
@@ -24,8 +25,9 @@ namespace DevFreela.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var query = new GetUserQuery(id);
-            var user = await _mediator.Send(query);
+            var getUserById = new GetUserById(id);
+
+            var user = await _mediator.Send(getUserById);
 
             if (user == null)
             {
@@ -38,36 +40,27 @@ namespace DevFreela.API.Controllers
         // api/users
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult Post([FromBody] CreateUserCommand command)
+        public async Task<IActionResult> Post([FromBody] CreateUserInputModel inputModel)
         {
-            if(!ModelState.IsValid) 
-            {
-                var mensagem = ModelState
-                    .SelectMany(ms => ms.Value.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
+            var id = await _userService.CreateAsync(inputModel);
 
-                return BadRequest(mensagem);
-            }
-
-            var id = _mediator.Send(command);
-
-            return CreatedAtAction(nameof(GetById), new { id = id }, command);
+            return CreatedAtAction(nameof(GetById), new { id = id }, inputModel);
         }
 
-        // api/users
-        [HttpPut]
+        // api/users/login
+        [HttpPut("/login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login(int id, [FromBody] LoginUserCommand command)
+        public async Task<IActionResult> Login([FromBody] LoginUserCommand command)
         {
-            var loginUserViewModel = await _mediator.Send(command);
+            var loginUserViewMovel = await _mediator.Send(command);
 
-            if (loginUserViewModel == null)
+            if (loginUserViewMovel == null)
             {
                 return BadRequest();
             }
 
-            return Ok(loginUserViewModel);
+            return Ok(loginUserViewMovel);
+
         }
     }
 }
